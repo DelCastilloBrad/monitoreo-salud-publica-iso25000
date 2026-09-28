@@ -45,7 +45,7 @@ jobs:
 
       - name: Medir 30 respuestas por ruta
         shell: bash
-        run: python scripts/measure_response_times.py reports/response_times.json
+        run: python -m scripts.measure_response_times reports/response_times.json
 
       - name: Conservar evidencia
         if: always()

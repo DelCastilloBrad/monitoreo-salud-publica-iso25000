@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Regiones de Mayor Carga{% endblock %}
+{% block breadcrumb %} / Regiones de Mayor Carga{% endblock %}
+{% block content %}
+  <h1>Regiones de Mayor Carga</h1>
+  <p class="lead">Departamentos con mayor frecuencia en el top-3 nacional de tasa de casos, 2000–2023.</p>
+
+  <section aria-label="Top regiones menores de 5 años">
+    <h2>Menores de 5 años</h2>
+    <figure class="figure">
+      <img src="/legacy/figures/heatmap_and_top3_bars_Children_lt5.png"
+           alt="Mapa de calor de ranking anual por región y barras de frecuencia en el top-3, menores de 5 años">
+      <figcaption>Categoría de ranking por año (1=más alto) y frecuencia en el top-3 nacional.</figcaption>
+    </figure>
+    <table class="data-table">
+      <thead><tr><th scope="col">Región</th><th scope="col">Veces en el top-3</th><th scope="col">% de años en el top-3</th></tr></thead>
+      <tbody>
+        {% for row in top3.children %}
+        <tr><td>{{ row.region }}</td><td>{{ row.top3_appearances }}</td><td>{{ row.percent_years_in_top3 }}%</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section aria-label="Top regiones adultos 60+">
+    <h2>Adultos 60+</h2>
+    <figure class="figure">
+      <img src="/legacy/figures/heatmap_and_top3_bars_Adults_60plus.png"
+           alt="Mapa de calor de ranking anual por región y barras de frecuencia en el top-3, adultos 60+">
+      <figcaption>Categoría de ranking por año (1=más alto) y frecuencia en el top-3 nacional.</figcaption>
+    </figure>
+    <table class="data-table">
+      <thead><tr><th scope="col">Región</th><th scope="col">Veces en el top-3</th><th scope="col">% de años en el top-3</th></tr></thead>
+      <tbody>
+        {% for row in top3.adults %}
+        <tr><td>{{ row.region }}</td><td>{{ row.top3_appearances }}</td><td>{{ row.percent_years_in_top3 }}%</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endblock %}

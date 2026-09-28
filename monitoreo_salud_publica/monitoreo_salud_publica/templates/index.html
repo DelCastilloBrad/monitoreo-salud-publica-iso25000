@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Resumen Nacional{% endblock %}
+{% block breadcrumb %} / Resumen Nacional{% endblock %}
+{% block content %}
+  <h1>Resumen Nacional</h1>
+  <p class="lead">Última semana reportada por grupo de riesgo. Los datos provienen del pipeline de vigilancia
+  epidemiológica del proyecto legado (2000–{{ ultimo_anio }}).</p>
+
+  <section class="kpi-grid" aria-label="Indicadores clave">
+    <article class="kpi-card">
+      <h2>Menores de 5 años</h2>
+      <p class="kpi-date">Semana del {{ kpis.children.fecha }}</p>
+      <p class="kpi-value">{{ kpis.children.casos }} <span class="kpi-unit">casos</span></p>
+      <dl class="kpi-sub">
+        <dt>Tasa de hospitalización (prom. 8 sem.)</dt><dd>{{ kpis.children.hr }}%</dd>
+        <dt>Letalidad (prom. 8 sem.)</dt><dd>{{ kpis.children.cfr }}%</dd>
+      </dl>
+    </article>
+    <article class="kpi-card">
+      <h2>Adultos 60+</h2>
+      <p class="kpi-date">Semana del {{ kpis.adults.fecha }}</p>
+      <p class="kpi-value">{{ kpis.adults.casos }} <span class="kpi-unit">casos</span></p>
+      <dl class="kpi-sub">
+        <dt>Tasa de hospitalización (prom. 8 sem.)</dt><dd>{{ kpis.adults.hr }}%</dd>
+        <dt>Letalidad (prom. 8 sem.)</dt><dd>{{ kpis.adults.cfr }}%</dd>
+      </dl>
+    </article>
+  </section>
+
+  <section aria-label="Tendencia anual nacional">
+    <h2>Tendencia Anual Nacional</h2>
+    <figure class="figure">
+      <img src="/legacy/figures/national_annual_variation_grid.png"
+           alt="Grilla de variación anual nacional de casos, hospitalizaciones y defunciones por IRA, menores de 5 años y adultos 60+, 2000-2023">
+      <figcaption>Casos, hospitalizaciones y defunciones por 100 000 habitantes, por año y grupo etario.</figcaption>
+    </figure>
+  </section>
+
+  <section class="quick-links" aria-label="Accesos rápidos">
+    <h2>Explorar</h2>
+    <div class="link-cards">
+      <a class="link-card" href="/regional">
+        <strong>Vigilancia Regional →</strong>
+        <span>Tendencias por departamento de mayor carga (menores y adultos mayores).</span>
+      </a>
+      <a class="link-card" href="/ranking">
+        <strong>Regiones de Mayor Carga →</strong>
+        <span>Ranking anual de departamentos y frecuencia en el top-3 nacional.</span>
+      </a>
+      <a class="link-card" href="/severidad">
+        <strong>Severidad (HR/CFR) →</strong>
+        <span>Tasa de hospitalización y letalidad a nivel nacional.</span>
+      </a>
+      <a class="link-card" href="/pronosticos">
+        <strong>Pronósticos →</strong>
+        <span>Comparación de modelos de forecasting (estadísticos, ML, LSTM).</span>
+      </a>
+    </div>
+  </section>
+{% endblock %}

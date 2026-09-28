@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Configuración requerida{% endblock %}
+{% block content %}
+  <h1>No se encontró el proyecto legado</h1>
+  <p class="lead">Este módulo lee directamente los resultados del proyecto <strong>ISPySA-Pneumonia</strong>.
+  Coloca la carpeta <code>ISPySA-Pneumonia-main</code> como carpeta <strong>hermana</strong> de
+  <code>monitoreo_salud_publica</code> (mismo nivel), es decir:</p>
+  <pre class="code-block">TrabajoCalidadSoftware/
+├── ISPySA-Pneumonia-main/
+└── monitoreo_salud_publica/  (este módulo)</pre>
+  <p>Ruta buscada: <code>{{ legacy_dir }}</code></p>
+{% endblock %}

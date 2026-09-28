@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Vigilancia Regional{% endblock %}
+{% block breadcrumb %} / Vigilancia Regional{% endblock %}
+{% block content %}
+  <h1>Vigilancia Regional</h1>
+  <p class="lead">Selecciona el grupo de riesgo y la región de mayor carga histórica para ver su tendencia.</p>
+
+  <form method="get" class="filter-bar" aria-label="Filtros de vigilancia regional">
+    <div class="field">
+      <label for="grupo">Grupo de riesgo</label>
+      <select id="grupo" name="grupo" onchange="this.form.submit()">
+        {% for key, cfg in regions.items() %}
+          <option value="{{ key }}" {{ 'selected' if key == grupo }}>{{ cfg.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="region">Región</label>
+      <select id="region" name="region" onchange="this.form.submit()">
+        {% for r in cfg.regions %}
+          <option value="{{ r }}" {{ 'selected' if r == region }}>{{ r }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <noscript><button type="submit">Aplicar</button></noscript>
+  </form>
+
+  <section aria-label="Tendencia de la región seleccionada">
+    <h2>{{ region }} — {{ cfg.label }}</h2>
+    <figure class="figure">
+      <img src="/legacy/{{ case_fig }}" alt="Tendencia de incidencia de casos en {{ region }} para {{ cfg.label }}">
+      <figcaption>Incidencia semanal de casos por 100 000 habitantes, con media móvil.</figcaption>
+    </figure>
+
+    {% if top3_fig %}
+    <figure class="figure">
+      <img src="/legacy/{{ top3_fig }}" alt="Comparación de los 3 mejores modelos de pronóstico para {{ region }}">
+      <figcaption>Top-3 modelos de pronóstico seleccionados para {{ region }} según MAE/RMSE/R².</figcaption>
+    </figure>
+    {% endif %}
+
+    {% if metrics_rows %}
+    <h3>Métricas de modelos ML — {{ region }}</h3>
+    <table class="data-table">
+      <caption class="sr-only">Métricas de error de los modelos de machine learning para {{ region }}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Modelo</th>
+          <th scope="col">MAE</th>
+          <th scope="col">RMSE</th>
+          <th scope="col">R²</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in metrics_rows %}
+        <tr>
+          <td>{{ row.model }}</td>
+          <td>{{ row.mae }}</td>
+          <td>{{ row.rmse }}</td>
+          <td>{{ row.r2 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </section>
+{% endblock %}

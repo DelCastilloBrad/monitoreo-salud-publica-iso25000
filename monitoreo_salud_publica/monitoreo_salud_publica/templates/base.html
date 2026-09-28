@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Monitoreo IRA{% endblock %} — Vigilancia de Salud Pública</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-badge">IRA</span>
+        <div>
+          <strong>Monitoreo y Vigilancia de Salud Pública</strong>
+          <div class="brand-sub">Infecciones Respiratorias Agudas — Perú 2000–2023</div>
+        </div>
+      </div>
+      <nav aria-label="Navegación principal">
+        <a href="/" class="{{ 'active' if request.path == '/' }}">Resumen</a>
+        <a href="/regional" class="{{ 'active' if request.path == '/regional' }}">Vigilancia Regional</a>
+        <a href="/ranking" class="{{ 'active' if request.path == '/ranking' }}">Regiones de Mayor Carga</a>
+        <a href="/severidad" class="{{ 'active' if request.path == '/severidad' }}">Severidad (HR/CFR)</a>
+        <a href="/pronosticos" class="{{ 'active' if request.path == '/pronosticos' }}">Pronósticos</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="breadcrumb">
+    <div class="breadcrumb-inner">Inicio {% block breadcrumb %}{% endblock %}</div>
+  </div>
+
+  <main id="contenido" class="content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    Datos: proyecto legado ISPySA-Pneumonia (2000–2023) · Módulo de monitoreo desarrollado para el curso de
+    Calidad de Software — no reemplaza el criterio clínico ni epidemiológico oficial.
+  </footer>
+</body>
+</html>

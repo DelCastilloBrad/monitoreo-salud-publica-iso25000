@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Severidad{% endblock %}
+{% block breadcrumb %} / Severidad (HR/CFR){% endblock %}
+{% block content %}
+  <h1>Severidad de la Enfermedad</h1>
+  <p class="lead">Tasa de hospitalización (HR = hospitalizados / casos) y letalidad
+  (CFR = defunciones / casos) a nivel nacional, con media móvil de 8 semanas.</p>
+
+  <section aria-label="Severidad menores de 5 años">
+    <h2>Menores de 5 años</h2>
+    <figure class="figure">
+      <img src="/legacy/figures/national_children_severity.png"
+           alt="Series de HR y CFR nacional para menores de 5 años, con dispersión anual HR vs CFR">
+      <figcaption>HR y CFR semanal (media móvil de 8 semanas) y relación anual HR vs CFR.</figcaption>
+    </figure>
+    <h3>Últimos 5 años (valores anuales)</h3>
+    <table class="data-table">
+      <thead><tr><th scope="col">Año</th><th scope="col">HR anual</th><th scope="col">CFR anual</th></tr></thead>
+      <tbody>
+        {% for row in tablas.children %}
+        <tr><td>{{ row.year }}</td><td>{{ '%.2f' % (row.HR * 100) }}%</td><td>{{ '%.2f' % (row.CFR * 100) }}%</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section aria-label="Severidad adultos 60+">
+    <h2>Adultos 60+</h2>
+    <figure class="figure">
+      <img src="/legacy/figures/national_adults_severity.png"
+           alt="Series de HR y CFR nacional para adultos de 60 años a más, con dispersión anual HR vs CFR">
+      <figcaption>HR y CFR semanal (media móvil de 8 semanas) y relación anual HR vs CFR.</figcaption>
+    </figure>
+    <h3>Últimos 5 años (valores anuales)</h3>
+    <table class="data-table">
+      <thead><tr><th scope="col">Año</th><th scope="col">HR anual</th><th scope="col">CFR anual</th></tr></thead>
+      <tbody>
+        {% for row in tablas.adults %}
+        <tr><td>{{ row.year }}</td><td>{{ '%.2f' % (row.HR * 100) }}%</td><td>{{ '%.2f' % (row.CFR * 100) }}%</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endblock %}

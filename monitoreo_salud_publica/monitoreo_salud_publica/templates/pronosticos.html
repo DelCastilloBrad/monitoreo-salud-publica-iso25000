@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Pronósticos{% endblock %}
+{% block breadcrumb %} / Pronósticos{% endblock %}
+{% block content %}
+  <h1>Pronósticos — Nivel Nacional</h1>
+  <p class="lead">Comparación de modelos de machine learning para la serie nacional agregada
+  (validación por ventana móvil: 5 años de entrenamiento, horizonte de 4 semanas).</p>
+
+  <section aria-label="Pronóstico nacional menores de 5 años">
+    <h2>Menores de 5 años</h2>
+    <figure class="figure">
+      <img src="/legacy/national_children_cases_ml/national_children_cases_ml_plot.png"
+           alt="Pronóstico nacional de casos de IRA en menores de 5 años">
+      <figcaption>Serie observada vs. pronosticada, nivel nacional.</figcaption>
+    </figure>
+    <table class="data-table">
+      <thead><tr><th scope="col">Modelo</th><th scope="col">MAE</th><th scope="col">RMSE</th><th scope="col">R²</th></tr></thead>
+      <tbody>
+        {% for row in nat_children %}
+        <tr><td>{{ row.model }}</td><td>{{ row.mae }}</td><td>{{ row.rmse }}</td><td>{{ row.r2 }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section aria-label="Pronóstico nacional adultos 60+">
+    <h2>Adultos 60+</h2>
+    <figure class="figure">
+      <img src="/legacy/national_adults_cases_ml/national_adults_cases_ml_plot.png"
+           alt="Pronóstico nacional de casos de IRA en adultos de 60 años a más">
+      <figcaption>Serie observada vs. pronosticada, nivel nacional.</figcaption>
+    </figure>
+    <table class="data-table">
+      <thead><tr><th scope="col">Modelo</th><th scope="col">MAE</th><th scope="col">RMSE</th><th scope="col">R²</th></tr></thead>
+      <tbody>
+        {% for row in nat_adults %}
+        <tr><td>{{ row.model }}</td><td>{{ row.mae }}</td><td>{{ row.rmse }}</td><td>{{ row.r2 }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <p class="note">XGBoost obtiene el menor error (MAE/RMSE) y mayor R² en ambos grupos, por lo que es el
+  modelo recomendado para el módulo de pronóstico nacional. Ver detalle por región en
+  <a href="/regional">Vigilancia Regional</a>.</p>
+{% endblock %}

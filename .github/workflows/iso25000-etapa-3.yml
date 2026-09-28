@@ -25,6 +25,8 @@ jobs:
             /ISPySA-Pneumonia-main/outputs/figures/*.png
             /ISPySA-Pneumonia-main/outputs/children_cases_ml_simulation_recursive/*_ml_metrics.csv
             /ISPySA-Pneumonia-main/outputs/adults_cases_ml_optimized/all_regions_adults_cases_ml_metrics.csv
+            /ISPySA-Pneumonia-main/outputs/children_cases_top3_model_plots/*.png
+            /ISPySA-Pneumonia-main/outputs/adults_cases_top3_models_final/*.png
             /ISPySA-Pneumonia-main/outputs/national_children_cases_ml/national_children_cases_ml_metrics.csv
             /ISPySA-Pneumonia-main/outputs/national_adults_cases_ml/national_adults_cases_ml_metrics.csv
 

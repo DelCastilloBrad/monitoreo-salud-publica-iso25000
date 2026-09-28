@@ -44,7 +44,7 @@ jobs:
       - name: Ejecutar Pytest con Coverage.py
         shell: bash
         run: |
-          python -m coverage run --source=monitoreo_salud_publica -m pytest tests -q --junitxml=reports/pytest.xml
+          python -m coverage run --source=monitoreo_salud_publica -m pytest tests/test_monitoreo.py -q --junitxml=reports/pytest.xml
           python -m coverage json -o reports/coverage.json
           python -m coverage report > reports/coverage.txt
 

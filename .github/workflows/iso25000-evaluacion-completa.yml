@@ -1,0 +1,132 @@
+name: ISO 25000 - evaluacion completa
+
+on:
+  workflow_dispatch:
+
+jobs:
+  preparacion-metricas:
+    name: Preparacion y metricas en ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    steps:
+      - name: Obtener solo el modulo evaluado
+        uses: actions/checkout@v4
+        with:
+          ref: evaluacion-iso25000-etapas-1-2
+          sparse-checkout: |
+            monitoreo_salud_publica
+            tests
+            scripts
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar dependencias de la medicion
+        shell: bash
+        run: |
+          python -m pip install -r monitoreo_salud_publica/requirements.txt
+          python -m pip install pymetrica==1.6.0 pytest coverage
+      - name: Registrar el entorno real
+        shell: bash
+        run: python scripts/capture_environment.py reports/environment.json
+      - name: Medir estructura del modulo con Pymetrica
+        shell: bash
+        run: pymetrica run-all -rt JSON monitoreo_salud_publica > reports/pymetrica.json
+      - name: Ejecutar Pytest con Coverage.py
+        shell: bash
+        run: |
+          python -m coverage run --source=monitoreo_salud_publica -m pytest tests/test_monitoreo.py -q --junitxml=reports/pytest.xml
+          python -m coverage json -o reports/coverage.json
+          python -m coverage report > reports/coverage.txt
+      - name: Conservar evidencia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: completa-preparacion-${{ matrix.os }}
+          path: reports/
+          if-no-files-found: warn
+
+  funcionalidad-tiempos:
+    name: Funcionalidad y tiempos en ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: evaluacion-iso25000-etapas-1-2
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /monitoreo_salud_publica/
+            /tests/
+            /scripts/
+            /ISPySA-Pneumonia-main/outputs/tables/*.csv
+            /ISPySA-Pneumonia-main/outputs/figures/*.png
+            /ISPySA-Pneumonia-main/outputs/children_cases_ml_simulation_recursive/*_ml_metrics.csv
+            /ISPySA-Pneumonia-main/outputs/adults_cases_ml_optimized/all_regions_adults_cases_ml_metrics.csv
+            /ISPySA-Pneumonia-main/outputs/children_cases_top3_model_plots/*.png
+            /ISPySA-Pneumonia-main/outputs/adults_cases_top3_models_final/*.png
+            /ISPySA-Pneumonia-main/outputs/national_children_cases_ml/national_children_cases_ml_metrics.csv
+            /ISPySA-Pneumonia-main/outputs/national_adults_cases_ml/national_adults_cases_ml_metrics.csv
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar el modulo y Pytest
+        shell: bash
+        run: python -m pip install -r monitoreo_salud_publica/requirements.txt pytest coverage
+      - name: Registrar entorno, datos y resultados funcionales
+        shell: bash
+        run: |
+          python scripts/capture_environment.py reports/environment.json
+          python -m coverage run --source=monitoreo_salud_publica -m pytest tests -q --junitxml=reports/functional.xml
+          python -m coverage json -o reports/coverage.json
+          python -m coverage report > reports/coverage.txt
+      - name: Medir 30 respuestas por ruta
+        shell: bash
+        run: python -m scripts.measure_response_times reports/response_times.json
+      - name: Conservar evidencia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: completa-funcionalidad-${{ matrix.os }}
+          path: reports/
+          if-no-files-found: warn
+
+  portabilidad:
+    name: Portabilidad en ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: evaluacion-iso25000-etapas-1-2
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /ejecutar_monitoreo.bat
+            /ejecutar_monitoreo1.sh
+            /monitoreo_salud_publica/
+            /scripts/
+            /ISPySA-Pneumonia-main/outputs/tables/*.csv
+            /ISPySA-Pneumonia-main/outputs/figures/*.png
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Ejecutar instalador y comprobar HTTP
+        shell: bash
+        run: python -m scripts.check_portability reports/portability.json
+      - name: Guardar registro y resultado
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: completa-portabilidad-${{ matrix.os }}
+          path: reports/
+          if-no-files-found: warn

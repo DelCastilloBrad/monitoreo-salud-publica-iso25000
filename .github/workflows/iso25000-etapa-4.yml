@@ -1,0 +1,43 @@
+name: ISO 25000 - portabilidad de arranque
+
+on:
+  push:
+    branches: [evaluacion-iso25000-etapas-1-2]
+  workflow_dispatch:
+
+jobs:
+  portabilidad:
+    name: Script original en ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /ejecutar_monitoreo.bat
+            /ejecutar_monitoreo1.sh
+            /monitoreo_salud_publica/
+            /scripts/
+            /ISPySA-Pneumonia-main/outputs/tables/*.csv
+            /ISPySA-Pneumonia-main/outputs/figures/*.png
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Ejecutar instalador y comprobar HTTP
+        shell: bash
+        run: python -m scripts.check_portability reports/portability.json
+
+      - name: Guardar registro y resultado
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iso25000-etapa-4-${{ matrix.os }}
+          path: reports/
+          if-no-files-found: warn

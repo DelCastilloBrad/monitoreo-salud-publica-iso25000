@@ -1,0 +1,6 @@
+radon==6.0.1
+pylint==3.3.8
+bandit==1.8.6
+pymetrica==1.6.0
+flask>=3,<4
+pandas>=2,<3

@@ -29,6 +29,23 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r t5/requirements.txt
           python -m pip install -r monitoreo_salud_publica/monitoreo_salud_publica/requirements.txt
+      - name: Preparar datos legados para la evaluación
+        shell: python
+        run: |
+          from pathlib import Path
+          import shutil
+
+          raiz = Path.cwd()
+          origen = raiz / "ISPySA-Pneumonia-main" / "ISPySA-Pneumonia-main" / "outputs"
+          destino = raiz / "monitoreo_salud_publica" / "ISPySA-Pneumonia-main" / "outputs"
+
+          if not origen.is_dir():
+              raise SystemExit(f"No se encontraron los datos legados: {origen}")
+
+          destino.parent.mkdir(parents=True, exist_ok=True)
+          shutil.copytree(origen, destino, dirs_exist_ok=True)
+          print(f"Datos preparados en: {destino}")
+
       - name: Analisis integral
         shell: bash
         run: python t5/full.py --source monitoreo_salud_publica/monitoreo_salud_publica/app.py --out t5/results/ci --repeats 10

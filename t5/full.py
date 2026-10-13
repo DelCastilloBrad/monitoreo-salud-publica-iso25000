@@ -73,8 +73,10 @@ def main():
         def counted(*args,**kwargs):
             counts["read_csv"]+=1
             return old(*args,**kwargs)
-        spec=importlib.util.spec_from_file_location("t5_target_app",src)
-        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        sys.path.insert(0, str(src.parent.parent))
+        import importlib
+        importlib.invalidate_caches()
+        module=importlib.import_module(f"{src.parent.name}.{src.stem}")
         if not hasattr(module,"app"):raise RuntimeError("No existe objeto Flask app")
         legacy=module.legacy_ready() if hasattr(module,"legacy_ready") else None
         dynamic["legacy_ready"]=legacy

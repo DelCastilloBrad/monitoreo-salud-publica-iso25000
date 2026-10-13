@@ -1,0 +1,63 @@
+name: TP5 - Auditoria centralizada
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 't5/**'
+      - 'monitoreo_salud_publica/monitoreo_salud_publica/app.py'
+      - 'ejecutar_auditoria_t5_windows.bat'
+      - '.github/workflows/t5-centralizado.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  auditoria:
+    name: TP5 ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: t5/requirements.txt
+
+      - name: Instalar dependencias
+        run: python -m pip install -r t5/requirements.txt
+
+      - name: Ejecutar auditoria TP5
+        run: python t5/full.py --source monitoreo_salud_publica/monitoreo_salud_publica/app.py --out t5/results/ci --repeats 10
+
+      - name: Verificar salidas y reportar alcance
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          p = Path("t5/results/ci")
+          s = json.loads((p / "summary.json").read_text(encoding="utf-8"))
+          d = json.loads((p / "dynamic.json").read_text(encoding="utf-8"))
+          print("LLOC:", s.get("lloc"), "| CC max:", s.get("cc_max"))
+          print("Estado dinamico:", d.get("status"), "|", d.get("reason"))
+          if d.get("status") != "measured":
+              print("AVISO: no interpretar respuestas fallback como medicion dinamica completa.")
+          assert (p / "reporte.html").exists()
+          assert (p / "radon_cc.json").exists()
+
+      - name: Publicar evidencias
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tp5-evidencias-${{ matrix.os }}
+          path: t5/results/ci/
+          if-no-files-found: warn
+          retention-days: 30

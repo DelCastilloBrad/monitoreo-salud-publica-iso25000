@@ -1,71 +1,75 @@
-name: T5 - Evaluacion comparativa
+name: T5 - Evaluacion integral comparativa
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 't5/**'
+      - 'monitoreo_salud_publica/**'
+      - '.github/workflows/t5-evaluacion-comparativa.yml'
 permissions:
   contents: read
 jobs:
   evaluar:
+    name: T5 en ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, windows-2022]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+      - name: Python 3.11
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Instalar herramientas
-        run: python -m pip install radon==6.0.1 pylint==3.3.8 bandit==1.8.6 pymetrica==1.6.0
-      - name: Ejecutar y producir informes
+      - name: Instalar herramientas y dependencias
         shell: bash
         run: |
-          mkdir -p t5-results
-          python -m radon cc -j -s monitoreo_salud_publica/monitoreo_salud_publica/app.py > t5-results/radon_cc.json
-          python -m radon mi -j monitoreo_salud_publica/monitoreo_salud_publica/app.py > t5-results/radon_mi.json
-          python -m radon raw -j monitoreo_salud_publica/monitoreo_salud_publica/app.py > t5-results/radon_raw.json
-          python -m pylint monitoreo_salud_publica/monitoreo_salud_publica/app.py --output-format=json --score=n > t5-results/pylint.json || true
-          python -m bandit -q -f json monitoreo_salud_publica/monitoreo_salud_publica/app.py > t5-results/bandit.json || true
-          pymetrica run-all -rt JSON monitoreo_salud_publica/monitoreo_salud_publica > t5-results/pymetrica.json 2> t5-results/pymetrica_stderr.txt || true
-          python - <<'PYAST'
-          import ast, json, pathlib
-          f=pathlib.Path('monitoreo_salud_publica/monitoreo_salud_publica/app.py')
-          tree=ast.parse(f.read_text(encoding='utf-8'))
-          findings=[]
-          for n in ast.walk(tree):
-              if isinstance(n,(ast.For,ast.While,ast.AsyncFor)):
-                  for x in ast.walk(n):
-                      if isinstance(x,ast.Call) and ast.unparse(x.func).endswith(('read_csv','read_excel','open','iterrows','itertuples')):
-                          findings.append({'line':x.lineno,'rule':'EF02_LOOP_OPERATION','expression':ast.unparse(x.func),'status':'candidate_not_confirmed'})
-              if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)):
-                  for x in ast.walk(n):
-                      if isinstance(x,ast.Call) and ast.unparse(x.func).endswith(('read_csv','read_excel')):
-                          findings.append({'line':x.lineno,'rule':'EF01_READ_IN_FUNCTION','expression':ast.unparse(x.func),'status':'candidate_not_confirmed'})
-          pathlib.Path('t5-results/eficiencia_candidatos.json').write_text(json.dumps(findings,indent=2))
-          PYAST
-          python - <<'PY'
-          import json, pathlib, platform, subprocess, sys, html
-          p=pathlib.Path('t5-results')
-          def get(name):
-              try: return json.loads((p/name).read_text())
-              except Exception: return {}
-          cc=get('radon_cc.json'); mi=get('radon_mi.json'); raw=get('radon_raw.json')
-          pl=get('pylint.json'); bd=get('bandit.json')
-          functions=[f for fs in cc.values() for f in fs] if isinstance(cc,dict) else []
-          rawvals=list(raw.values()) if isinstance(raw,dict) else []
-          mivals=list(mi.values()) if isinstance(mi,dict) else []
-          loc=sum(x.get('loc',0) for x in rawvals if isinstance(x,dict))
-          values={'pymetrica_report':'pymetrica.json (verificar salida)', 'efficiency_candidates':len(get('eficiencia_candidatos.json')) if isinstance(get('eficiencia_candidatos.json'),list) else None,'commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'os':platform.platform(),'python':sys.version.split()[0],'loc':loc,'cc_max':max((x.get('complexity',0) for x in functions),default=None),'cc_mean':round(sum(x.get('complexity',0) for x in functions)/len(functions),2) if functions else None,'maintainability_index':round(sum(x.get('mi',0) for x in mivals if isinstance(x,dict))/len(mivals),2) if mivals else None,'pylint_issues':len(pl) if isinstance(pl,list) else None,'bandit_findings':len(bd.get('results',[])) if isinstance(bd,dict) else None,'complex_functions_gt10':sum(x.get('complexity',0)>10 for x in functions)}
-          (p/'summary.json').write_text(json.dumps(values,indent=2,ensure_ascii=False))
-          rows=''.join('<tr><th>'+html.escape(str(k))+'</th><td>'+html.escape(str(v))+'</td></tr>' for k,v in values.items())
-          (p/'reporte.html').write_text('<!doctype html><html lang="es"><meta charset="utf-8"><title>T5</title><style>body{font:17px system-ui;max-width:1000px;margin:45px auto}table{border-collapse:collapse;width:100%}td,th{padding:12px;border:1px solid #ccc;text-align:left}th{background:#dff0ff}</style><h1>Evaluación T5</h1><table>'+rows+'</table><p>Resultados exploratorios de análisis estático; no equivalen a certificación ISO/IEC 5055 ni a benchmarks de rendimiento.</p></html>')
-          with open(__import__('os').environ['GITHUB_STEP_SUMMARY'],'a') as f:
-              f.write('## Evaluación T5 — '+platform.system()+'\n\n| Indicador | Valor |\n|---|---|\n')
-              for k,v in values.items(): f.write(f'| {k} | {v} |\n')
-          PY
-      - uses: actions/upload-artifact@v4
+          python -m pip install --upgrade pip
+          python -m pip install -r t5/requirements.txt
+          python -m pip install -r monitoreo_salud_publica/monitoreo_salud_publica/requirements.txt
+      - name: Analisis integral
+        shell: bash
+        run: python t5/full.py --source monitoreo_salud_publica/monitoreo_salud_publica/app.py --out t5/results/ci --repeats 10
+      - name: Resumen visible
         if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path('t5/results/ci/summary.json')
+          if p.exists():
+              d=json.loads(p.read_text(encoding='utf-8'))
+              s=['## Evaluacion T5','- Sistema: '+str(d.get('system')),'- Commit: '+str(d.get('git_commit')),'- LLOC: '+str(d.get('lloc')),'- Radon CC maxima: '+str(d.get('cc_max')),'- Pylint: '+str(d.get('pylint_alerts')),'- Bandit: '+str(d.get('bandit_alerts')),'- Candidatos EF: '+str(d.get('efficiency_candidates')),'- Dinamica: '+str(d.get('dynamic',{}).get('status')),'- EF04: requiere confirmacion manual']
+              with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:f.write('\n'.join(s)+'\n')
+          PY
+      - name: Subir resultados
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: t5-${{ matrix.os }}
-          path: t5-results/
-          retention-days: 30
+          path: t5/results/ci/
+          if-no-files-found: warn
+  sonarcloud:
+    name: SonarCloud (opcional, requiere SONAR_TOKEN y variables)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        if: ${{ vars.SONAR_PROJECT_KEY != '' && vars.SONAR_ORGANIZATION != '' }}
+        with:
+          fetch-depth: 0
+      - name: Analisis SonarCloud
+        if: ${{ vars.SONAR_PROJECT_KEY != '' && vars.SONAR_ORGANIZATION != '' }}
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+            -Dsonar.sources=monitoreo_salud_publica/monitoreo_salud_publica
+            -Dsonar.host.url=https://sonarcloud.io
+      - name: Estado de configuracion
+        if: ${{ vars.SONAR_PROJECT_KEY == '' || vars.SONAR_ORGANIZATION == '' }}
+        run: echo "SonarCloud no configurado; establecer variables SONAR_PROJECT_KEY y SONAR_ORGANIZATION y secreto SONAR_TOKEN."

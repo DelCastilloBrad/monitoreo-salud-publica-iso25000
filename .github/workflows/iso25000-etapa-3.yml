@@ -1,0 +1,60 @@
+name: ISO 25000 - funcionalidad, cobertura y tiempos
+
+on:
+  push:
+    branches: [evaluacion-iso25000-etapas-1-2]
+  workflow_dispatch:
+
+jobs:
+  ejecucion:
+    name: Funcional y rendimiento en ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /monitoreo_salud_publica/
+            /tests/
+            /scripts/
+            /ISPySA-Pneumonia-main/outputs/tables/*.csv
+            /ISPySA-Pneumonia-main/outputs/figures/*.png
+            /ISPySA-Pneumonia-main/outputs/children_cases_ml_simulation_recursive/*_ml_metrics.csv
+            /ISPySA-Pneumonia-main/outputs/adults_cases_ml_optimized/all_regions_adults_cases_ml_metrics.csv
+            /ISPySA-Pneumonia-main/outputs/children_cases_top3_model_plots/*.png
+            /ISPySA-Pneumonia-main/outputs/adults_cases_top3_models_final/*.png
+            /ISPySA-Pneumonia-main/outputs/national_children_cases_ml/national_children_cases_ml_metrics.csv
+            /ISPySA-Pneumonia-main/outputs/national_adults_cases_ml/national_adults_cases_ml_metrics.csv
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar el módulo y Pytest
+        shell: bash
+        run: |
+          python -m pip install -r monitoreo_salud_publica/requirements.txt pytest coverage
+
+      - name: Registrar entorno, datos y resultados funcionales
+        shell: bash
+        run: |
+          python scripts/capture_environment.py reports/environment.json
+          python -m coverage run --source=monitoreo_salud_publica -m pytest tests -q --junitxml=reports/functional.xml
+          python -m coverage json -o reports/coverage.json
+          python -m coverage report > reports/coverage.txt
+
+      - name: Medir 30 respuestas por ruta
+        shell: bash
+        run: python -m scripts.measure_response_times reports/response_times.json
+
+      - name: Conservar evidencia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iso25000-etapa-3-${{ matrix.os }}
+          path: reports/
+          if-no-files-found: warn

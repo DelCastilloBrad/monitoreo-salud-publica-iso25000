@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Instalar herramientas
-        run: python -m pip install radon==6.0.1 pylint==3.3.8 bandit==1.8.6
+        run: python -m pip install radon==6.0.1 pylint==3.3.8 bandit==1.8.6 pymetrica==1.6.0
       - name: Ejecutar y producir informes
         shell: bash
         run: |
@@ -26,6 +26,23 @@ jobs:
           python -m radon raw -j monitoreo_salud_publica/monitoreo_salud_publica/app.py > t5-results/radon_raw.json
           python -m pylint monitoreo_salud_publica/monitoreo_salud_publica/app.py --output-format=json --score=n > t5-results/pylint.json || true
           python -m bandit -q -f json monitoreo_salud_publica/monitoreo_salud_publica/app.py > t5-results/bandit.json || true
+          pymetrica run-all -rt JSON monitoreo_salud_publica/monitoreo_salud_publica > t5-results/pymetrica.json 2> t5-results/pymetrica_stderr.txt || true
+          python - <<'PYAST'
+          import ast, json, pathlib
+          f=pathlib.Path('monitoreo_salud_publica/monitoreo_salud_publica/app.py')
+          tree=ast.parse(f.read_text(encoding='utf-8'))
+          findings=[]
+          for n in ast.walk(tree):
+              if isinstance(n,(ast.For,ast.While,ast.AsyncFor)):
+                  for x in ast.walk(n):
+                      if isinstance(x,ast.Call) and ast.unparse(x.func).endswith(('read_csv','read_excel','open','iterrows','itertuples')):
+                          findings.append({'line':x.lineno,'rule':'EF02_LOOP_OPERATION','expression':ast.unparse(x.func),'status':'candidate_not_confirmed'})
+              if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)):
+                  for x in ast.walk(n):
+                      if isinstance(x,ast.Call) and ast.unparse(x.func).endswith(('read_csv','read_excel')):
+                          findings.append({'line':x.lineno,'rule':'EF01_READ_IN_FUNCTION','expression':ast.unparse(x.func),'status':'candidate_not_confirmed'})
+          pathlib.Path('t5-results/eficiencia_candidatos.json').write_text(json.dumps(findings,indent=2))
+          PYAST
           python - <<'PY'
           import json, pathlib, platform, subprocess, sys, html
           p=pathlib.Path('t5-results')
@@ -38,7 +55,7 @@ jobs:
           rawvals=list(raw.values()) if isinstance(raw,dict) else []
           mivals=list(mi.values()) if isinstance(mi,dict) else []
           loc=sum(x.get('loc',0) for x in rawvals if isinstance(x,dict))
-          values={'commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'os':platform.platform(),'python':sys.version.split()[0],'loc':loc,'cc_max':max((x.get('complexity',0) for x in functions),default=None),'cc_mean':round(sum(x.get('complexity',0) for x in functions)/len(functions),2) if functions else None,'maintainability_index':round(sum(x.get('mi',0) for x in mivals if isinstance(x,dict))/len(mivals),2) if mivals else None,'pylint_issues':len(pl) if isinstance(pl,list) else None,'bandit_findings':len(bd.get('results',[])) if isinstance(bd,dict) else None,'complex_functions_gt10':sum(x.get('complexity',0)>10 for x in functions)}
+          values={'pymetrica_report':'pymetrica.json (verificar salida)', 'efficiency_candidates':len(get('eficiencia_candidatos.json')) if isinstance(get('eficiencia_candidatos.json'),list) else None,'commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'os':platform.platform(),'python':sys.version.split()[0],'loc':loc,'cc_max':max((x.get('complexity',0) for x in functions),default=None),'cc_mean':round(sum(x.get('complexity',0) for x in functions)/len(functions),2) if functions else None,'maintainability_index':round(sum(x.get('mi',0) for x in mivals if isinstance(x,dict))/len(mivals),2) if mivals else None,'pylint_issues':len(pl) if isinstance(pl,list) else None,'bandit_findings':len(bd.get('results',[])) if isinstance(bd,dict) else None,'complex_functions_gt10':sum(x.get('complexity',0)>10 for x in functions)}
           (p/'summary.json').write_text(json.dumps(values,indent=2,ensure_ascii=False))
           rows=''.join('<tr><th>'+html.escape(str(k))+'</th><td>'+html.escape(str(v))+'</td></tr>' for k,v in values.items())
           (p/'reporte.html').write_text('<!doctype html><html lang="es"><meta charset="utf-8"><title>T5</title><style>body{font:17px system-ui;max-width:1000px;margin:45px auto}table{border-collapse:collapse;width:100%}td,th{padding:12px;border:1px solid #ccc;text-align:left}th{background:#dff0ff}</style><h1>Evaluación T5</h1><table>'+rows+'</table><p>Resultados exploratorios de análisis estático; no equivalen a certificación ISO/IEC 5055 ni a benchmarks de rendimiento.</p></html>')
